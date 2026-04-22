@@ -2,8 +2,10 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Sun, Moon, Search, ChevronRight, Check, X, RotateCcw,
   BookOpen, Home, Flame, Trophy, Eye, EyeOff, Brain, Clock, ArrowLeft,
-  Calendar, ExternalLink,
+  Calendar, ExternalLink, Flag,
 } from 'lucide-react';
+
+const THEME_IDS = ['dark', 'light', 'us'];
 import { WIKI } from './data/wiki.js';
 import { QUESTIONS } from './data/questions.js';
 import { SPEECHES } from './data/speeches.js';
@@ -219,6 +221,22 @@ const THEMES = {
     heatScale: ['#1f1e1a', '#2d4a2d', '#487a44', '#68ab5a', '#9bd47b'],
     subtle: '#17171412',
   },
+  // Clean red-white-blue. Parchment cream for backgrounds, deep navy for
+  // text/accent, Old Glory Red reserved for "wrong" highlights. Heatmap
+  // gradient runs cream → navy so activity reads as patriotic blue.
+  us: {
+    bg: '#f6f1e4',
+    surface: '#fdf9ec',
+    text: '#0d1b3d',
+    muted: '#5a6486',
+    border: '#d5c9ae',
+    accent: '#0d1b3d',
+    correct: '#2e6749',
+    wrong: '#b22234',
+    heatEmpty: '#e7ddc4',
+    heatScale: ['#e7ddc4', '#c9d3e3', '#8da4c9', '#4b6aa1', '#0d1b3d'],
+    subtle: '#efe7d1',
+  },
 };
 
 // ============================================================
@@ -226,7 +244,7 @@ const THEMES = {
 // ============================================================
 
 export default function App() {
-  const [theme, setTheme] = useState('light');
+  const [theme, setTheme] = useState('dark');
   const [tab, setTab] = useState('home');
   const [sessions, setSessions] = useState({});
   const [streak, setStreak] = useState({ current: 0, longest: 0, lastDate: null });
@@ -259,15 +277,18 @@ export default function App() {
   const t = THEMES[theme];
 
   useEffect(() => {
-    setTheme(storageGet(STORAGE_KEYS.theme, 'light'));
+    const savedTheme = storageGet(STORAGE_KEYS.theme, 'dark');
+    setTheme(THEME_IDS.includes(savedTheme) ? savedTheme : 'dark');
     setSessions(storageGet(STORAGE_KEYS.sessions, {}));
     setStreak(storageGet(STORAGE_KEYS.streak, { current: 0, longest: 0, lastDate: null }));
     setTotals(storageGet(STORAGE_KEYS.totals, { played: 0, correct: 0 }));
     setLoaded(true);
   }, []);
 
+  // Cycle dark → light → us → dark.
   const toggleTheme = () => {
-    const next = theme === 'light' ? 'dark' : 'light';
+    const idx = THEME_IDS.indexOf(theme);
+    const next = THEME_IDS[(idx + 1) % THEME_IDS.length] || 'dark';
     setTheme(next);
     storageSet(STORAGE_KEYS.theme, next);
   };
@@ -420,7 +441,10 @@ function Header({ theme, t, toggleTheme, tab, setTab }) {
     }}>
       <div style={{ maxWidth: 780, margin: '0 auto', padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-          <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: '-0.01em' }}>Americana</span>
+          <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: '-0.01em' }}>
+            {theme === 'us' && <span style={{ marginRight: 8 }}>🇺🇸</span>}
+            Americana
+          </span>
           <span className="mono" style={{ fontSize: 10, color: t.muted, letterSpacing: '0.15em', textTransform: 'uppercase' }}>trivia</span>
         </div>
         <button
@@ -437,7 +461,9 @@ function Header({ theme, t, toggleTheme, tab, setTab }) {
             transition: 'all 150ms ease',
           }}
         >
-          {theme === 'light' ? <Sun size={15} /> : <Moon size={15} />}
+          {theme === 'dark' && <Moon size={15} />}
+          {theme === 'light' && <Sun size={15} />}
+          {theme === 'us' && <Flag size={15} />}
         </button>
       </div>
       <nav style={{ maxWidth: 780, margin: '0 auto', padding: '0 20px', display: 'flex', gap: 0, overflowX: 'auto' }}>
