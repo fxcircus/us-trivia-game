@@ -11,8 +11,35 @@ import { SPEECHES } from './data/speeches.js';
 // Number of questions per play session, sampled randomly from the pool.
 const SESSION_SIZE = 20;
 
+// Maximum number of questions from any single `category` that may appear
+// in one session. Prevents runs like 6 "State Capitals" or 4 "Statehood
+// · Year" from dominating a 20-question session. Tune here if needed.
+const MAX_PER_CATEGORY = 2;
+
 function buildSession() {
-  return shuffle(QUESTIONS).slice(0, SESSION_SIZE);
+  const shuffled = shuffle(QUESTIONS);
+  const counts = new Map();
+  const picked = [];
+  const overflow = [];
+
+  for (const q of shuffled) {
+    const cat = q.category || '_uncategorized';
+    const count = counts.get(cat) || 0;
+    if (count < MAX_PER_CATEGORY) {
+      picked.push(q);
+      counts.set(cat, count + 1);
+      if (picked.length === SESSION_SIZE) return picked;
+    } else {
+      overflow.push(q);
+    }
+  }
+
+  // Pool exhausted and we still couldn't fill the session under the cap
+  // (would only happen with a very narrow pool). Fall back to overflow.
+  while (picked.length < SESSION_SIZE && overflow.length > 0) {
+    picked.push(overflow.shift());
+  }
+  return picked;
 }
 
 // ============================================================
@@ -215,11 +242,19 @@ export default function App() {
   // Deep-linking from Play → Wiki. Setting this to a fresh { chapter, num }
   // object triggers WikiView to open that chapter and scroll to the entry.
   const [wikiDeep, setWikiDeep] = useState(null);
+  // Tracks whether the user arrived at Wiki via "Open in wiki" from a Play
+  // answer — used to show a "Back to question" affordance on Wiki.
+  const [fromPlay, setFromPlay] = useState(false);
   const openInWiki = (ref) => {
     if (!ref) return;
     setWikiDeep({ chapter: ref.chapter, num: ref.num });
+    setFromPlay(true);
     setTab('wiki');
   };
+  // Clear the "came from Play" flag on any tab change away from Wiki.
+  useEffect(() => {
+    if (tab !== 'wiki') setFromPlay(false);
+  }, [tab]);
 
   const t = THEMES[theme];
 
@@ -325,7 +360,10 @@ export default function App() {
         {tab === 'home' && (
           <HomeView t={t} sessions={sessions} setTab={setTab} />
         )}
-        {tab === 'play' && (
+        {/* PlayView stays mounted (just hidden) so per-question state —
+            selected option, typed blanks, shown hint, submission result —
+            is preserved when the user leaves Play for Wiki or Stats. */}
+        <div style={{ display: tab === 'play' ? 'block' : 'none' }}>
           <PlayView
             t={t}
             onAnswer={recordAnswer}
@@ -339,12 +377,17 @@ export default function App() {
             setFinished={setPlayFinished}
             openInWiki={openInWiki}
           />
-        )}
+        </div>
         {tab === 'memorize' && (
           <MemorizeView t={t} />
         )}
         {tab === 'wiki' && (
-          <WikiView t={t} deepLink={wikiDeep} />
+          <WikiView
+            t={t}
+            deepLink={wikiDeep}
+            showBackToPlay={fromPlay}
+            onBackToPlay={() => setTab('play')}
+          />
         )}
         {tab === 'stats' && (
           <StatsView t={t} sessions={sessions} streak={streak} totals={totals} resetAll={resetAll} />
@@ -1134,7 +1177,7 @@ function NextButton({ t, onClick }) {
 // WIKI VIEW
 // ============================================================
 
-function WikiView({ t, deepLink }) {
+function WikiView({ t, deepLink, showBackToPlay, onBackToPlay }) {
   const [query, setQuery] = useState('');
   const [openChapter, setOpenChapter] = useState(null);
 
@@ -1169,6 +1212,25 @@ function WikiView({ t, deepLink }) {
 
   return (
     <div className="fade-in">
+      {showBackToPlay && (
+        <button
+          onClick={onBackToPlay}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            background: t.text, color: t.bg,
+            border: 'none',
+            padding: '8px 14px',
+            fontSize: 12,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            cursor: 'pointer',
+            marginTop: 16,
+          }}
+        >
+          <ArrowLeft size={12} />
+          Back to question
+        </button>
+      )}
       <h1 style={{ fontSize: 32, fontWeight: 400, margin: '24px 0 20px', letterSpacing: '-0.02em' }}>Reference</h1>
 
       <div style={{

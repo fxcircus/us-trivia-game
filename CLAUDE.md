@@ -74,6 +74,40 @@ Include at least one president who hasn't appeared in prior question
 choices. Keeps the pool varied across a full session — avoid always
 recycling the same ~20 names.
 
+### Category consistency (drives session diversification)
+
+`buildSession` caps each session at `MAX_PER_CATEGORY` (currently 2)
+questions per `category` string. This means **two questions with the same
+exact category string are interchangeable for the cap**. Implications:
+
+- **Reuse existing category labels** rather than inventing per-question
+  variants. If you add 5 new "amendments" questions, use `'Bill of Rights'`
+  (or the relevant existing label), not `'Bill of Rights · Q3'`. Otherwise
+  the cap effectively becomes 1-per-question and doesn't diversify.
+- **Split large topical clumps into one category per cluster**, not per
+  question. The pattern `'Statehood · Year'` vs `'Statehood · Order'`
+  works: two distinct categories, capped independently, so a session can
+  hold at most 2+2 = 4 statehood questions.
+- **Single-label clumps are fine for small topics.** If you add 6
+  "Supreme Court" questions, keep all 6 under `'Supreme Court'`; the cap
+  will expose 2 per session.
+
+### Distractor spacing
+
+For MC and match-year questions, distractors should be **visibly different
+from the correct answer**, not clustered around it. "Consecutive year"
+or "consecutive ordinal" distractors tell the user "the answer is in this
+narrow window" — they may guess without knowing.
+
+- **Year distractors**: spread across decades or eras. Don't use three
+  years within 5 of the correct answer. Good: `['1790', '1850', '1890', '1959']`.
+  Bad: `['1787', '1788', '1789', '1790']`.
+- **Ordinal distractors**: spread across the full ordinal range. For the
+  50 states, aim for distractors ≥ 10 positions apart. Good for Vermont
+  (14th): `['1st', '14th', '27th', '39th']`. Bad: `['13th', '14th', '15th', '16th']`.
+- **Match-year distractors**: the `distractors` array should include at
+  least 3 plausible decoys chosen from different eras.
+
 ### Avoiding dumb questions
 
 - **Don't let labels telegraph the answer.** The `order` question using
