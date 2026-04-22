@@ -157,6 +157,12 @@ export default function App() {
   const [totals, setTotals] = useState({ played: 0, correct: 0 });
   const [loaded, setLoaded] = useState(false);
 
+  // Lifted Play state — survives tab switches so progress isn't lost.
+  const [playQueue, setPlayQueue] = useState(() => shuffle(QUESTIONS));
+  const [playIndex, setPlayIndex] = useState(0);
+  const [playScore, setPlayScore] = useState({ c: 0, w: 0 });
+  const [playFinished, setPlayFinished] = useState(false);
+
   const t = THEMES[theme];
 
   useEffect(() => {
@@ -262,7 +268,18 @@ export default function App() {
           <HomeView t={t} sessions={sessions} setTab={setTab} />
         )}
         {tab === 'play' && (
-          <PlayView t={t} onAnswer={recordAnswer} />
+          <PlayView
+            t={t}
+            onAnswer={recordAnswer}
+            queue={playQueue}
+            setQueue={setPlayQueue}
+            index={playIndex}
+            setIndex={setPlayIndex}
+            score={playScore}
+            setScore={setPlayScore}
+            finished={playFinished}
+            setFinished={setPlayFinished}
+          />
         )}
         {tab === 'memorize' && (
           <MemorizeView t={t} />
@@ -491,12 +508,7 @@ function Heatmap({ t, sessions }) {
 // PLAY VIEW
 // ============================================================
 
-function PlayView({ t, onAnswer }) {
-  const [queue, setQueue] = useState(() => shuffle(QUESTIONS));
-  const [index, setIndex] = useState(0);
-  const [score, setScore] = useState({ c: 0, w: 0 });
-  const [finished, setFinished] = useState(false);
-
+function PlayView({ t, onAnswer, queue, setQueue, index, setIndex, score, setScore, finished, setFinished }) {
   const q = queue[index];
 
   const handleResult = (correct) => {
