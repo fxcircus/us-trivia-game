@@ -661,6 +661,7 @@ function MultipleChoice({ q, t, onResult, onNext }) {
 function CompleteText({ q, t, onResult, onNext }) {
   const [values, setValues] = useState(q.blanks.map(() => ''));
   const [submitted, setSubmitted] = useState(false);
+  const [hintShown, setHintShown] = useState(false);
 
   const results = q.blanks.map((b, i) => values[i].trim().toLowerCase() === b.toLowerCase());
   const allCorrect = results.every(Boolean);
@@ -707,7 +708,29 @@ function CompleteText({ q, t, onResult, onNext }) {
         ))}
       </p>
       {q.hint && !submitted && (
-        <p style={{ fontSize: 12, color: t.muted, fontStyle: 'italic', marginTop: -8 }}>Hint: {q.hint}</p>
+        hintShown ? (
+          <p style={{ fontSize: 12, color: t.muted, fontStyle: 'italic', margin: '-4px 0 8px' }}>
+            Hint: {q.hint}
+          </p>
+        ) : (
+          <button
+            onClick={() => setHintShown(true)}
+            style={{
+              background: 'transparent',
+              border: `1px solid ${t.border}`,
+              color: t.muted,
+              padding: '5px 12px',
+              fontSize: 11,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              margin: '-4px 0 8px',
+              display: 'inline-block',
+            }}
+          >
+            Show hint
+          </button>
+        )
       )}
       {submitted && !allCorrect && (
         <p style={{ fontSize: 13, color: t.muted, marginTop: 8 }}>
