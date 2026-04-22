@@ -7,6 +7,13 @@ import { WIKI } from './data/wiki.js';
 import { QUESTIONS } from './data/questions.js';
 import { SPEECHES } from './data/speeches.js';
 
+// Number of questions per play session, sampled randomly from the pool.
+const SESSION_SIZE = 20;
+
+function buildSession() {
+  return shuffle(QUESTIONS).slice(0, SESSION_SIZE);
+}
+
 // ============================================================
 // STORAGE HELPERS (localStorage)
 // ============================================================
@@ -158,7 +165,7 @@ export default function App() {
   const [loaded, setLoaded] = useState(false);
 
   // Lifted Play state — survives tab switches so progress isn't lost.
-  const [playQueue, setPlayQueue] = useState(() => shuffle(QUESTIONS));
+  const [playQueue, setPlayQueue] = useState(buildSession);
   const [playIndex, setPlayIndex] = useState(0);
   const [playScore, setPlayScore] = useState({ c: 0, w: 0 });
   const [playFinished, setPlayFinished] = useState(false);
@@ -522,7 +529,7 @@ function PlayView({ t, onAnswer, queue, setQueue, index, setIndex, score, setSco
   };
 
   const restart = () => {
-    setQueue(shuffle(QUESTIONS));
+    setQueue(buildSession());
     setIndex(0);
     setScore({ c: 0, w: 0 });
     setFinished(false);
