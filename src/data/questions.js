@@ -1,6 +1,17 @@
 // ============================================================
 // QUESTIONS — shuffled each session.
 // type: 'multiple' | 'complete' | 'truefalse' | 'match-year' | 'order'
+//
+// Optional per-question metadata:
+//   wikiRef: { chapter: string, num: number }
+//     Points to a specific wiki entry. The answer reveal shows an
+//     "Open in wiki" link and, for amendment chapters, the amendment text.
+//   date: string
+//     Shown in the answer reveal. Falls back to the wiki entry's year.
+//   suppressAmendmentText: true
+//     Skip rendering the amendment text (for prompts that already quote it).
+//   distractors: number[]   (match-year only)
+//     Extra decoy years added to the year pool alongside the correct ones.
 // ============================================================
 
 export const QUESTIONS = [
@@ -11,6 +22,7 @@ export const QUESTIONS = [
     prompt: 'Which amendment protects against unreasonable searches and seizures?',
     choices: ['Second', 'Fourth', 'Sixth', 'Eighth'],
     answer: 1,
+    wikiRef: { chapter: 'bill-of-rights', num: 4 },
   },
   {
     id: 'q2',
@@ -19,6 +31,7 @@ export const QUESTIONS = [
     prompt: 'Complete the opening: "Congress shall make no law respecting an establishment of religion, or prohibiting the free exercise thereof; or abridging the freedom of ____, or of the ____..."',
     blanks: ['speech', 'press'],
     hint: 'Two of the five First Amendment freedoms.',
+    wikiRef: { chapter: 'bill-of-rights', num: 1 },
   },
   {
     id: 'q3',
@@ -26,7 +39,8 @@ export const QUESTIONS = [
     category: 'Reconstruction',
     prompt: 'The 14th Amendment established birthright citizenship.',
     answer: true,
-    explanation: '"All persons born or naturalized in the United States, and subject to the jurisdiction thereof, are citizens..."',
+    explanation: 'Section 1 opens with the Citizenship Clause, overruling Dred Scott and making formerly enslaved people citizens.',
+    wikiRef: { chapter: 'reconstruction', num: 14 },
   },
   {
     id: 'q4',
@@ -35,6 +49,7 @@ export const QUESTIONS = [
     prompt: 'Which amendment established the federal income tax?',
     choices: ['16th', '17th', '18th', '19th'],
     answer: 0,
+    wikiRef: { chapter: 'progressive', num: 16 },
   },
   {
     id: 'q5',
@@ -42,6 +57,8 @@ export const QUESTIONS = [
     category: 'Second Amendment',
     prompt: 'Complete: "A well regulated ____, being necessary to the security of a free State, the right of the people to keep and bear ____, shall not be infringed."',
     blanks: ['militia', 'arms'],
+    wikiRef: { chapter: 'bill-of-rights', num: 2 },
+    suppressAmendmentText: true,
   },
   {
     id: 'q6',
@@ -54,23 +71,31 @@ export const QUESTIONS = [
       { item: '26th (voting age 18)', year: 1971 },
       { item: '27th (congressional pay)', year: 1992 },
     ],
+    distractors: [1791, 1868, 1933, 1951],
   },
   {
     id: 'q7',
     type: 'multiple',
     category: 'Bill of Rights',
-    prompt: 'Which amendment contains the clause "nor be deprived of life, liberty, or property, without due process of law"?',
+    prompt: 'The "due process of law" clause first appears in which amendment? (The 14th later applies it to the states.)',
     choices: ['4th', '5th', '6th', '14th'],
     answer: 1,
-    explanation: 'Both the 5th and 14th contain due process clauses — 5th applies to federal government, 14th to states.',
+    explanation: 'The 5th Amendment (1791) contained the original due process clause, binding the federal government. The 14th Amendment (1868) extended it to the states.',
+    wikiRef: { chapter: 'bill-of-rights', num: 5 },
   },
   {
     id: 'q8',
     type: 'order',
     category: 'Chronology',
     prompt: 'Put these amendments in order of ratification (earliest to latest).',
-    items: ['13th Amendment', '19th Amendment', '22nd Amendment', '26th Amendment'],
+    items: [
+      'Abolition of slavery',
+      'Women\'s suffrage',
+      'Presidential term limits (two-term cap)',
+      'Voting age lowered to 18',
+    ],
     correctOrder: [0, 1, 2, 3],
+    explanation: '13th (1865) → 19th (1920) → 22nd (1951) → 26th (1971).',
   },
   {
     id: 'q9',
@@ -78,13 +103,18 @@ export const QUESTIONS = [
     category: 'Tenth Amendment',
     prompt: 'Complete: "The powers not delegated to the United States by the Constitution, nor prohibited by it to the States, are reserved to the ____ respectively, or to the ____."',
     blanks: ['states', 'people'],
+    wikiRef: { chapter: 'bill-of-rights', num: 10 },
+    suppressAmendmentText: true,
   },
   {
     id: 'q10',
-    type: 'truefalse',
+    type: 'multiple',
     category: 'Modern',
-    prompt: 'The 21st Amendment repealed Prohibition.',
-    answer: true,
+    prompt: 'Which amendment repealed Prohibition?',
+    choices: ['18th', '21st', '22nd', '27th'],
+    answer: 1,
+    explanation: 'The 18th Amendment (1919) established Prohibition; the 21st (1933) repealed it — the only amendment to repeal a prior amendment.',
+    wikiRef: { chapter: 'modern', num: 21 },
   },
   {
     id: 'q11',
@@ -93,6 +123,7 @@ export const QUESTIONS = [
     prompt: 'The 22nd Amendment limits a president to how many elected terms?',
     choices: ['One', 'Two', 'Three', 'No limit'],
     answer: 1,
+    wikiRef: { chapter: 'modern', num: 22 },
   },
   {
     id: 'q12',
@@ -100,6 +131,7 @@ export const QUESTIONS = [
     category: 'Preamble',
     prompt: 'Complete the Preamble: "We the People of the United States, in Order to form a more ____ Union, establish ____, insure domestic ____..."',
     blanks: ['perfect', 'justice', 'tranquility'],
+    wikiRef: { chapter: 'founding', num: 5 },
   },
 
   // ─── Presidents ───
@@ -110,7 +142,8 @@ export const QUESTIONS = [
     prompt: 'Who was the only president to serve non-consecutive terms until 2025?',
     choices: ['Benjamin Harrison', 'Grover Cleveland', 'William McKinley', 'Theodore Roosevelt'],
     answer: 1,
-    explanation: 'Cleveland served as the 22nd and 24th president (1885–1889, 1893–1897).',
+    explanation: 'Cleveland served as the 22nd and 24th president (1885–1889, 1893–1897). Donald Trump became the second, returning as the 47th president in 2025.',
+    wikiRef: { chapter: 'presidents', num: 22 },
   },
   {
     id: 'p2',
@@ -119,7 +152,8 @@ export const QUESTIONS = [
     prompt: 'Who is the only US president to serve more than two terms?',
     choices: ['Theodore Roosevelt', 'Woodrow Wilson', 'Franklin D. Roosevelt', 'Harry S. Truman'],
     answer: 2,
-    explanation: 'FDR was elected four times. The 22nd Amendment (1951) set the two-term limit afterward.',
+    explanation: 'FDR was elected four times (1932, 1936, 1940, 1944). The 22nd Amendment (1951) set the two-term limit afterward.',
+    wikiRef: { chapter: 'presidents', num: 32 },
   },
   {
     id: 'p3',
@@ -127,7 +161,9 @@ export const QUESTIONS = [
     category: 'Presidents',
     prompt: 'Andrew Johnson was the first US president to be impeached.',
     answer: true,
-    explanation: 'Impeached by the House in 1868, acquitted in the Senate by one vote.',
+    explanation: 'Impeached by the House on February 24, 1868 over the Tenure of Office Act; acquitted in the Senate by one vote on May 16, 1868.',
+    wikiRef: { chapter: 'presidents', num: 17 },
+    date: 'Feb–May 1868',
   },
   {
     id: 'p4',
@@ -136,7 +172,9 @@ export const QUESTIONS = [
     prompt: 'Which president held office for only 31 days — the shortest presidency in US history?',
     choices: ['James A. Garfield', 'Zachary Taylor', 'William Henry Harrison', 'Warren G. Harding'],
     answer: 2,
-    explanation: 'Harrison died of pneumonia in 1841, a month after his long outdoor inauguration.',
+    explanation: 'Harrison died of pneumonia on April 4, 1841, a month after his ~1h 45m outdoor inauguration in cold rain.',
+    wikiRef: { chapter: 'presidents', num: 9 },
+    date: 'March 4 – April 4, 1841',
   },
   {
     id: 'p5',
@@ -149,6 +187,7 @@ export const QUESTIONS = [
       { item: 'Franklin D. Roosevelt', year: 1933 },
       { item: 'Barack Obama', year: 2009 },
     ],
+    distractors: [1801, 1841, 1901, 2017],
   },
   {
     id: 'p6',
@@ -165,6 +204,8 @@ export const QUESTIONS = [
     prompt: 'Which president is the only one to also have served as Chief Justice of the Supreme Court?',
     choices: ['John Adams', 'William Howard Taft', 'Herbert Hoover', 'Calvin Coolidge'],
     answer: 1,
+    explanation: 'Taft served as president 1909–1913 and as Chief Justice 1921–1930 — the only person to hold both offices.',
+    wikiRef: { chapter: 'presidents', num: 27 },
   },
   {
     id: 'p8',
@@ -172,7 +213,9 @@ export const QUESTIONS = [
     category: 'Presidents',
     prompt: 'Gerald Ford was never elected as President or Vice President.',
     answer: true,
-    explanation: 'Appointed VP under the 25th Amendment after Agnew resigned, then assumed the presidency after Nixon resigned.',
+    explanation: 'Appointed VP under the 25th Amendment in 1973 after Agnew resigned, then assumed the presidency on August 9, 1974 when Nixon resigned. The only person to hold both offices without being elected to either.',
+    wikiRef: { chapter: 'presidents', num: 38 },
+    date: '1974–1977',
   },
 
   // ─── Firsts & Lasts ───
@@ -183,7 +226,9 @@ export const QUESTIONS = [
     prompt: 'Who was the first president to live in the White House?',
     choices: ['George Washington', 'John Adams', 'Thomas Jefferson', 'James Madison'],
     answer: 1,
-    explanation: 'Adams moved in November 1800, before construction was fully complete.',
+    explanation: 'Adams moved in in November 1800, before construction was fully complete.',
+    wikiRef: { chapter: 'firsts-lasts', num: 2 },
+    date: 'November 1800',
   },
   {
     id: 'fl2',
@@ -192,15 +237,20 @@ export const QUESTIONS = [
     prompt: 'Who was the first president to resign from office?',
     choices: ['Lyndon B. Johnson', 'Richard Nixon', 'Gerald Ford', 'Jimmy Carter'],
     answer: 1,
-    explanation: 'Nixon resigned August 9, 1974, during the Watergate scandal. Still the only one.',
+    explanation: 'Nixon resigned during the Watergate scandal. Still the only president to have resigned.',
+    wikiRef: { chapter: 'firsts-lasts', num: 12 },
+    date: 'August 9, 1974',
   },
   {
     id: 'fl3',
-    type: 'truefalse',
+    type: 'multiple',
     category: 'Firsts & Lasts',
-    prompt: 'John F. Kennedy was the first Catholic president.',
-    answer: true,
-    explanation: 'Inaugurated January 20, 1961. Joe Biden became the second in 2021.',
+    prompt: 'Who was the first Catholic president?',
+    choices: ['Ronald Reagan', 'John F. Kennedy', 'Joe Biden', 'Bill Clinton'],
+    answer: 1,
+    explanation: 'JFK — the first Catholic to hold the office. Biden (2021) became the second Catholic president; Reagan and Clinton were Protestant.',
+    wikiRef: { chapter: 'firsts-lasts', num: 10 },
+    date: 'Inaugurated January 20, 1961',
   },
   {
     id: 'fl4',
@@ -209,7 +259,9 @@ export const QUESTIONS = [
     prompt: 'Who was the last president born in the 19th century?',
     choices: ['Herbert Hoover', 'Franklin D. Roosevelt', 'Harry S. Truman', 'Dwight D. Eisenhower'],
     answer: 3,
-    explanation: 'Eisenhower was born October 14, 1890.',
+    explanation: 'Eisenhower was born October 14, 1890. Every subsequent president was born in 1908 or later.',
+    wikiRef: { chapter: 'firsts-lasts', num: 16 },
+    date: 'Born October 14, 1890',
   },
   {
     id: 'fl5',
@@ -218,16 +270,20 @@ export const QUESTIONS = [
     prompt: 'Which president was the first to be assassinated?',
     choices: ['Abraham Lincoln', 'James A. Garfield', 'William McKinley', 'John F. Kennedy'],
     answer: 0,
-    explanation: 'Shot by John Wilkes Booth at Ford\'s Theatre, April 14, 1865.',
+    explanation: 'Shot by John Wilkes Booth at Ford\'s Theatre; died the following morning.',
+    wikiRef: { chapter: 'firsts-lasts', num: 4 },
+    date: 'April 14, 1865',
   },
 
-  // ─── Speeches (excerpt-style completions) ───
+  // ─── Speeches ───
   {
     id: 's1',
     type: 'complete',
     category: 'JFK Inaugural',
     prompt: 'Complete JFK\'s famous line: "And so, my fellow Americans: ask not what your ____ can do for you—ask what you can do for your ____."',
     blanks: ['country', 'country'],
+    wikiRef: { chapter: 'inaugurals', num: 9 },
+    date: 'January 20, 1961',
   },
   {
     id: 's2',
@@ -235,6 +291,8 @@ export const QUESTIONS = [
     category: 'Gettysburg Address',
     prompt: 'Complete the opening of the Gettysburg Address: "Four score and seven years ago our fathers brought forth on this continent, a new ____, conceived in ____, and dedicated to the proposition that all men are created ____."',
     blanks: ['nation', 'liberty', 'equal'],
+    wikiRef: { chapter: 'inaugurals', num: 2 },
+    date: 'November 19, 1863',
   },
   {
     id: 's3',
@@ -242,6 +300,8 @@ export const QUESTIONS = [
     category: 'FDR First Inaugural',
     prompt: 'Complete FDR\'s line from his first inaugural: "...the only thing we have to ____ is ____ itself..."',
     blanks: ['fear', 'fear'],
+    wikiRef: { chapter: 'inaugurals', num: 5 },
+    date: 'March 4, 1933',
   },
   {
     id: 's4',
@@ -249,6 +309,8 @@ export const QUESTIONS = [
     category: 'FDR Day of Infamy',
     prompt: 'Complete: "Yesterday, ____ 7, 1941—a date which will live in ____—the United States of America was suddenly and deliberately attacked..."',
     blanks: ['december', 'infamy'],
+    wikiRef: { chapter: 'inaugurals', num: 6 },
+    date: 'Delivered December 8, 1941',
   },
   {
     id: 's5',
@@ -257,7 +319,9 @@ export const QUESTIONS = [
     prompt: 'Which president coined the phrase "military-industrial complex" in his farewell address?',
     choices: ['Harry S. Truman', 'Dwight D. Eisenhower', 'John F. Kennedy', 'Lyndon B. Johnson'],
     answer: 1,
-    explanation: 'Eisenhower, January 17, 1961, three days before JFK\'s inauguration.',
+    explanation: 'Eisenhower\'s farewell address, delivered three days before JFK\'s inauguration.',
+    wikiRef: { chapter: 'inaugurals', num: 8 },
+    date: 'January 17, 1961',
   },
   {
     id: 's6',
@@ -265,6 +329,8 @@ export const QUESTIONS = [
     category: 'Reagan at Brandenburg',
     prompt: 'Complete Reagan\'s 1987 challenge: "Mr. ____, tear down this ____!"',
     blanks: ['gorbachev', 'wall'],
+    wikiRef: { chapter: 'inaugurals', num: 13 },
+    date: 'June 12, 1987',
   },
   {
     id: 's7',
@@ -272,6 +338,8 @@ export const QUESTIONS = [
     category: 'Gettysburg Address',
     prompt: 'Complete the closing: "...government of the ____, by the ____, for the ____, shall not perish from the earth."',
     blanks: ['people', 'people', 'people'],
+    wikiRef: { chapter: 'inaugurals', num: 2 },
+    date: 'November 19, 1863',
   },
   {
     id: 's8',
@@ -279,6 +347,8 @@ export const QUESTIONS = [
     category: 'Lincoln Second Inaugural',
     prompt: 'Complete Lincoln\'s Second Inaugural: "With ____ toward none, with ____ for all, with firmness in the right as God gives us to see the right..."',
     blanks: ['malice', 'charity'],
+    wikiRef: { chapter: 'inaugurals', num: 3 },
+    date: 'March 4, 1865',
   },
   {
     id: 's9',
@@ -286,7 +356,9 @@ export const QUESTIONS = [
     category: 'Speeches',
     prompt: 'The Gettysburg Address was under 300 words long.',
     answer: true,
-    explanation: '272 words. Edward Everett, who spoke for two hours beforehand, later wrote Lincoln saying he had said more in two minutes than Everett had in two hours.',
+    explanation: '272 words. Edward Everett, who spoke for two hours beforehand, later wrote Lincoln that he had said more in two minutes than Everett had in two hours.',
+    wikiRef: { chapter: 'inaugurals', num: 2 },
+    date: 'November 19, 1863',
   },
   {
     id: 's10',
@@ -295,7 +367,9 @@ export const QUESTIONS = [
     prompt: 'Who delivered the longest inaugural address in US history (roughly 1h 45m)?',
     choices: ['James K. Polk', 'William Henry Harrison', 'James Buchanan', 'Benjamin Harrison'],
     answer: 1,
-    explanation: 'Harrison gave a ~8,445-word speech outside, caught pneumonia, and died 31 days later.',
+    explanation: 'Harrison gave a ~8,445-word speech outdoors without a hat or coat, caught pneumonia, and died 31 days later — the shortest presidency in US history.',
+    wikiRef: { chapter: 'presidents', num: 9 },
+    date: 'March 4, 1841',
   },
 
   // ─── National Symbols ───
@@ -306,7 +380,9 @@ export const QUESTIONS = [
     prompt: 'Who wrote the lyrics that became "The Star-Spangled Banner"?',
     choices: ['John Philip Sousa', 'Francis Scott Key', 'Julia Ward Howe', 'Francis Bellamy'],
     answer: 1,
-    explanation: 'Written Sept 14, 1814 while Key watched the British bombard Fort McHenry. Adopted as anthem in 1931.',
+    explanation: 'Key watched the British bombard Fort McHenry during the War of 1812. The song was set to the tune of "To Anacreon in Heaven," a British drinking song; adopted as the national anthem in 1931.',
+    wikiRef: { chapter: 'symbols', num: 4 },
+    date: 'September 14, 1814',
   },
   {
     id: 'sym2',
@@ -316,6 +392,8 @@ export const QUESTIONS = [
     choices: ['Fort Sumter', 'Fort Ticonderoga', 'Fort McHenry', 'Fort Knox'],
     answer: 2,
     explanation: 'Fort McHenry, in Baltimore Harbor, during the War of 1812.',
+    wikiRef: { chapter: 'symbols', num: 4 },
+    date: 'September 13–14, 1814',
   },
   {
     id: 'sym3',
@@ -323,6 +401,7 @@ export const QUESTIONS = [
     category: 'National Symbols',
     prompt: 'The Star-Spangled Banner has four verses, though only the first is commonly sung.',
     answer: true,
+    wikiRef: { chapter: 'symbols', num: 4 },
   },
   {
     id: 'sym4',
@@ -330,6 +409,8 @@ export const QUESTIONS = [
     category: 'Pledge of Allegiance',
     prompt: 'Complete: "I pledge allegiance to the Flag of the United States of America, and to the ____ for which it stands, one Nation under ____, indivisible, with ____ and ____ for all."',
     blanks: ['republic', 'god', 'liberty', 'justice'],
+    wikiRef: { chapter: 'symbols', num: 5 },
+    date: 'Written 1892; "under God" added 1954',
   },
   {
     id: 'sym5',
@@ -337,7 +418,9 @@ export const QUESTIONS = [
     category: 'National Symbols',
     prompt: 'The phrase "under God" has been in the Pledge of Allegiance since it was written in 1892.',
     answer: false,
-    explanation: 'It was added in 1954 during the Eisenhower administration — the original 1892 pledge had 22 words; today\'s version has 31.',
+    explanation: 'It was added by Act of Congress in 1954 during the Eisenhower administration — the original 1892 pledge had 22 words; today\'s version has 31.',
+    wikiRef: { chapter: 'symbols', num: 5 },
+    date: 'Added June 14, 1954',
   },
   {
     id: 'sym6',
@@ -347,6 +430,8 @@ export const QUESTIONS = [
     choices: ['Thomas Jefferson', 'John Adams', 'Benjamin Franklin', 'Alexander Hamilton'],
     answer: 2,
     explanation: 'Franklin called the eagle "a bird of bad moral character" and proposed the turkey as "a much more respectable bird."',
+    wikiRef: { chapter: 'symbols', num: 1 },
+    date: 'Great Seal adopted 1782',
   },
   {
     id: 'sym7',
@@ -355,7 +440,9 @@ export const QUESTIONS = [
     prompt: 'What does "E Pluribus Unum" mean?',
     choices: ['In God we trust', 'Out of many, one', 'A new order of the ages', 'He has favored our undertakings'],
     answer: 1,
-    explanation: 'It appears on the Great Seal. "In God We Trust" became the official motto in 1956.',
+    explanation: 'It appears on the Great Seal. "In God We Trust" replaced it as the official motto in 1956.',
+    wikiRef: { chapter: 'symbols', num: 2 },
+    date: '1782',
   },
   {
     id: 'sym8',
@@ -364,7 +451,9 @@ export const QUESTIONS = [
     prompt: 'What is the Statue of Liberty\'s full formal name?',
     choices: ['Lady Liberty', 'Liberty Enlightening the World', 'The Mother of Exiles', 'The Colossus of Liberty'],
     answer: 1,
-    explanation: 'The pedestal inscription "Mother of Exiles" is from Emma Lazarus\'s poem "The New Colossus."',
+    explanation: '"Mother of Exiles" comes from Emma Lazarus\'s pedestal poem, "The New Colossus."',
+    wikiRef: { chapter: 'symbols', num: 9 },
+    date: 'Dedicated October 28, 1886',
   },
 
   // ─── Inventors ───
@@ -375,6 +464,8 @@ export const QUESTIONS = [
     prompt: 'Who invented the cotton gin in 1794?',
     choices: ['Eli Whitney', 'Elias Howe', 'Robert Fulton', 'Samuel Morse'],
     answer: 0,
+    wikiRef: { chapter: 'inventors', num: 2 },
+    date: '1794',
   },
   {
     id: 'inv2',
@@ -388,7 +479,9 @@ export const QUESTIONS = [
       '"The eagle has landed."',
     ],
     answer: 1,
-    explanation: 'Alexander Graham Bell to his assistant Thomas Watson, March 10, 1876.',
+    explanation: 'Alexander Graham Bell to his assistant Thomas Watson.',
+    wikiRef: { chapter: 'inventors', num: 6 },
+    date: 'March 10, 1876',
   },
   {
     id: 'inv3',
@@ -402,7 +495,9 @@ export const QUESTIONS = [
       '"Hail Columbia."',
     ],
     answer: 0,
-    explanation: 'Samuel Morse, May 24, 1844, from Washington to Baltimore.',
+    explanation: 'Samuel Morse, from the US Capitol to Baltimore.',
+    wikiRef: { chapter: 'inventors', num: 4 },
+    date: 'May 24, 1844',
   },
   {
     id: 'inv4',
@@ -410,7 +505,8 @@ export const QUESTIONS = [
     category: 'Inventors',
     prompt: 'Thomas Edison held over 1,000 US patents.',
     answer: true,
-    explanation: '1,093, to be exact.',
+    explanation: '1,093 US patents — more than any individual in his era. Also held hundreds more across other countries.',
+    wikiRef: { chapter: 'inventors', num: 7 },
   },
   {
     id: 'inv5',
@@ -419,7 +515,9 @@ export const QUESTIONS = [
     prompt: 'The Wright Brothers\' first flight at Kitty Hawk lasted about how long?',
     choices: ['3 seconds', '12 seconds', '1 minute', '5 minutes'],
     answer: 1,
-    explanation: '12 seconds, 120 feet — December 17, 1903.',
+    explanation: '12 seconds, 120 feet, at Kill Devil Hills near Kitty Hawk, NC.',
+    wikiRef: { chapter: 'inventors', num: 10 },
+    date: 'December 17, 1903',
   },
   {
     id: 'inv6',
@@ -428,7 +526,9 @@ export const QUESTIONS = [
     prompt: 'Who co-invented the frequency-hopping technology that would later underpin Wi-Fi, Bluetooth, and GPS?',
     choices: ['Grace Hopper', 'Hedy Lamarr', 'Margaret Hamilton', 'Ada Lovelace'],
     answer: 1,
-    explanation: 'Hollywood actress Hedy Lamarr with composer George Antheil, patented in 1942.',
+    explanation: 'Hollywood actress Hedy Lamarr with composer George Antheil. Designed to prevent jamming of radio-controlled torpedoes during WWII.',
+    wikiRef: { chapter: 'inventors', num: 17 },
+    date: 'Patented August 11, 1942',
   },
   {
     id: 'inv7',
@@ -441,6 +541,7 @@ export const QUESTIONS = [
       { item: 'First flight (Wright brothers)', year: 1903 },
       { item: 'TCP/IP (Cerf & Kahn)', year: 1974 },
     ],
+    distractors: [1844, 1879, 1927, 1959],
   },
   {
     id: 'inv8',
@@ -448,6 +549,9 @@ export const QUESTIONS = [
     category: 'Inventors',
     prompt: 'Grace Hopper coined the term "debugging" after finding an actual moth in a computer.',
     answer: true,
+    explanation: 'The moth was found in a relay of the Harvard Mark II and taped into the logbook with the note "First actual case of bug being found."',
+    wikiRef: { chapter: 'inventors', num: 13 },
+    date: 'September 9, 1947',
   },
 
   // ─── Founding Documents ───
@@ -457,6 +561,8 @@ export const QUESTIONS = [
     category: 'Declaration of Independence',
     prompt: 'Complete: "We hold these truths to be self-evident, that all men are created ____, that they are endowed by their Creator with certain unalienable Rights, that among these are ____, ____ and the pursuit of ____."',
     blanks: ['equal', 'life', 'liberty', 'happiness'],
+    wikiRef: { chapter: 'founding', num: 2 },
+    date: 'Adopted July 4, 1776',
   },
   {
     id: 'fd2',
@@ -465,7 +571,9 @@ export const QUESTIONS = [
     prompt: 'Who was the primary author of the Declaration of Independence?',
     choices: ['John Adams', 'Benjamin Franklin', 'Thomas Jefferson', 'John Hancock'],
     answer: 2,
-    explanation: 'Jefferson drafted it in June 1776; Adams and Franklin made edits before it was adopted July 4.',
+    explanation: 'Jefferson drafted it in June 1776; Adams and Franklin made edits before it was adopted by the Second Continental Congress on July 4.',
+    wikiRef: { chapter: 'founding', num: 1 },
+    date: 'Drafted June 1776',
   },
   {
     id: 'fd3',
@@ -473,6 +581,8 @@ export const QUESTIONS = [
     category: 'Declaration of Independence',
     prompt: 'The Declaration of Independence was signed on July 4, 1776.',
     answer: false,
-    explanation: 'It was adopted July 4, but most delegates signed on August 2, 1776.',
+    explanation: 'It was adopted on July 4, 1776, but most delegates did not physically sign the engrossed parchment until August 2, 1776.',
+    wikiRef: { chapter: 'founding', num: 1 },
+    date: 'Most delegates signed August 2, 1776',
   },
 ];

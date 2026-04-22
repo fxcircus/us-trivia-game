@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Sun, Moon, Search, ChevronRight, Check, X, RotateCcw,
   BookOpen, Home, Flame, Trophy, Eye, EyeOff, Brain, Clock, ArrowLeft,
+  Calendar, ExternalLink,
 } from 'lucide-react';
 import { WIKI } from './data/wiki.js';
 import { QUESTIONS } from './data/questions.js';
@@ -12,6 +13,47 @@ const SESSION_SIZE = 20;
 
 function buildSession() {
   return shuffle(QUESTIONS).slice(0, SESSION_SIZE);
+}
+
+// ============================================================
+// WIKI LOOKUP + PRESIDENT ENRICHMENT
+// ============================================================
+
+const AMENDMENT_CHAPTERS = new Set(['bill-of-rights', 'reconstruction', 'progressive', 'modern']);
+
+function getWikiEntry(ref) {
+  if (!ref) return null;
+  const chapter = WIKI.find((c) => c.id === ref.chapter);
+  if (!chapter) return null;
+  return chapter.entries.find((e) => e.num === ref.num) || null;
+}
+
+function ordinal(n) {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+// Build name -> [{ num, year }, ...] map so names used more than once
+// (Cleveland 22/24, Trump 45/47) combine their entries.
+const PRESIDENT_TERMS = (() => {
+  const map = new Map();
+  const chapter = WIKI.find((c) => c.id === 'presidents');
+  if (!chapter) return map;
+  for (const e of chapter.entries) {
+    if (!map.has(e.title)) map.set(e.title, []);
+    map.get(e.title).push({ num: e.num, year: e.year });
+  }
+  return map;
+})();
+
+function presidentLabel(name) {
+  const terms = PRESIDENT_TERMS.get(name);
+  if (!terms || terms.length === 0) return name;
+  if (terms.length === 1) return `${name} · ${ordinal(terms[0].num)}, ${terms[0].year}`;
+  const nums = terms.map((t) => ordinal(t.num)).join(' & ');
+  const years = terms.map((t) => t.year).join(', ');
+  return `${name} · ${nums}, ${years}`;
 }
 
 // ============================================================
@@ -170,6 +212,15 @@ export default function App() {
   const [playScore, setPlayScore] = useState({ c: 0, w: 0 });
   const [playFinished, setPlayFinished] = useState(false);
 
+  // Deep-linking from Play → Wiki. Setting this to a fresh { chapter, num }
+  // object triggers WikiView to open that chapter and scroll to the entry.
+  const [wikiDeep, setWikiDeep] = useState(null);
+  const openInWiki = (ref) => {
+    if (!ref) return;
+    setWikiDeep({ chapter: ref.chapter, num: ref.num });
+    setTab('wiki');
+  };
+
   const t = THEMES[theme];
 
   useEffect(() => {
@@ -286,13 +337,14 @@ export default function App() {
             setScore={setPlayScore}
             finished={playFinished}
             setFinished={setPlayFinished}
+            openInWiki={openInWiki}
           />
         )}
         {tab === 'memorize' && (
           <MemorizeView t={t} />
         )}
         {tab === 'wiki' && (
-          <WikiView t={t} />
+          <WikiView t={t} deepLink={wikiDeep} />
         )}
         {tab === 'stats' && (
           <StatsView t={t} sessions={sessions} streak={streak} totals={totals} resetAll={resetAll} />
@@ -515,7 +567,7 @@ function Heatmap({ t, sessions }) {
 // PLAY VIEW
 // ============================================================
 
-function PlayView({ t, onAnswer, queue, setQueue, index, setIndex, score, setScore, finished, setFinished }) {
+function PlayView({ t, onAnswer, queue, setQueue, index, setIndex, score, setScore, finished, setFinished, openInWiki }) {
   const q = queue[index];
 
   const handleResult = (correct) => {
@@ -577,7 +629,7 @@ function PlayView({ t, onAnswer, queue, setQueue, index, setIndex, score, setSco
         <div style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: t.muted, marginBottom: 12 }}>
           {q.category} · {labelForType(q.type)}
         </div>
-        <QuestionRenderer key={q.id} q={q} t={t} onResult={handleResult} onNext={next} />
+        <QuestionRenderer key={q.id} q={q} t={t} onResult={handleResult} onNext={next} openInWiki={openInWiki} />
       </div>
     </div>
   );
@@ -605,20 +657,28 @@ function Progress({ t, value }) {
 // QUESTION RENDERERS
 // ============================================================
 
-function QuestionRenderer({ q, t, onResult, onNext }) {
+function QuestionRenderer({ q, t, onResult, onNext, openInWiki }) {
+  const common = { q, t, onResult, onNext, openInWiki };
   switch (q.type) {
-    case 'multiple': return <MultipleChoice q={q} t={t} onResult={onResult} onNext={onNext} />;
-    case 'complete': return <CompleteText q={q} t={t} onResult={onResult} onNext={onNext} />;
-    case 'truefalse': return <TrueFalse q={q} t={t} onResult={onResult} onNext={onNext} />;
-    case 'match-year': return <MatchYear q={q} t={t} onResult={onResult} onNext={onNext} />;
-    case 'order': return <OrderItems q={q} t={t} onResult={onResult} onNext={onNext} />;
+    case 'multiple': return <MultipleChoice {...common} />;
+    case 'complete': return <CompleteText {...common} />;
+    case 'truefalse': return <TrueFalse {...common} />;
+    case 'match-year': return <MatchYear {...common} />;
+    case 'order': return <OrderItems {...common} />;
     default: return null;
   }
 }
 
-function MultipleChoice({ q, t, onResult, onNext }) {
+function MultipleChoice({ q, t, onResult, onNext, openInWiki }) {
   const [picked, setPicked] = useState(null);
   const submitted = picked !== null;
+
+  // If every choice looks like a known president name, enrich with number + years.
+  const enrichedChoices = useMemo(() => {
+    const allPresidents = q.choices.every((c) => PRESIDENT_TERMS.has(c));
+    if (!allPresidents) return q.choices;
+    return q.choices.map(presidentLabel);
+  }, [q.choices]);
 
   const pick = (i) => {
     if (submitted) return;
@@ -630,7 +690,7 @@ function MultipleChoice({ q, t, onResult, onNext }) {
     <div>
       <p style={{ fontSize: 22, fontWeight: 400, lineHeight: 1.4, margin: '0 0 24px', letterSpacing: '-0.01em' }}>{q.prompt}</p>
       <div style={{ display: 'grid', gap: 10 }}>
-        {q.choices.map((c, i) => {
+        {enrichedChoices.map((c, i) => {
           const isCorrect = submitted && i === q.answer;
           const isWrong = submitted && i === picked && i !== q.answer;
           return (
@@ -647,25 +707,24 @@ function MultipleChoice({ q, t, onResult, onNext }) {
                 fontSize: 15,
                 cursor: submitted ? 'default' : 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                gap: 10,
                 transition: 'all 150ms ease',
               }}
             >
               <span>{c}</span>
-              {isCorrect && <Check size={16} color={t.correct} />}
-              {isWrong && <X size={16} color={t.wrong} />}
+              {isCorrect && <Check size={16} color={t.correct} style={{ flexShrink: 0 }} />}
+              {isWrong && <X size={16} color={t.wrong} style={{ flexShrink: 0 }} />}
             </button>
           );
         })}
       </div>
-      {submitted && q.explanation && (
-        <p style={{ marginTop: 16, fontSize: 13, color: t.muted, fontStyle: 'italic', lineHeight: 1.5 }}>{q.explanation}</p>
-      )}
+      {submitted && <AnswerReveal q={q} t={t} openInWiki={openInWiki} />}
       {submitted && <NextButton t={t} onClick={onNext} />}
     </div>
   );
 }
 
-function CompleteText({ q, t, onResult, onNext }) {
+function CompleteText({ q, t, onResult, onNext, openInWiki }) {
   const [values, setValues] = useState(q.blanks.map(() => ''));
   const [submitted, setSubmitted] = useState(false);
   const [hintShown, setHintShown] = useState(false);
@@ -744,6 +803,7 @@ function CompleteText({ q, t, onResult, onNext }) {
           Correct answer{q.blanks.length > 1 ? 's' : ''}: <strong style={{ color: t.text }}>{q.blanks.join(', ')}</strong>
         </p>
       )}
+      {submitted && <AnswerReveal q={q} t={t} openInWiki={openInWiki} />}
       {!submitted ? (
         <button onClick={submit} style={primaryBtn(t)}>
           Check answer
@@ -755,7 +815,7 @@ function CompleteText({ q, t, onResult, onNext }) {
   );
 }
 
-function TrueFalse({ q, t, onResult, onNext }) {
+function TrueFalse({ q, t, onResult, onNext, openInWiki }) {
   const [picked, setPicked] = useState(null);
   const submitted = picked !== null;
 
@@ -794,16 +854,18 @@ function TrueFalse({ q, t, onResult, onNext }) {
           );
         })}
       </div>
-      {submitted && q.explanation && (
-        <p style={{ marginTop: 16, fontSize: 13, color: t.muted, fontStyle: 'italic', lineHeight: 1.5 }}>{q.explanation}</p>
-      )}
+      {submitted && <AnswerReveal q={q} t={t} openInWiki={openInWiki} />}
       {submitted && <NextButton t={t} onClick={onNext} />}
     </div>
   );
 }
 
-function MatchYear({ q, t, onResult, onNext }) {
-  const years = useMemo(() => shuffle(q.pairs.map((p) => p.year)), [q.id]);
+function MatchYear({ q, t, onResult, onNext, openInWiki }) {
+  const years = useMemo(() => {
+    const pairYears = q.pairs.map((p) => p.year);
+    const distractors = q.distractors || [];
+    return shuffle([...pairYears, ...distractors]);
+  }, [q.id]);
   const [assignments, setAssignments] = useState({});
   const [submitted, setSubmitted] = useState(false);
 
@@ -864,6 +926,7 @@ function MatchYear({ q, t, onResult, onNext }) {
           Correct: {q.pairs.map((p) => `${p.item.split(' (')[0]} → ${p.year}`).join(' · ')}
         </div>
       )}
+      {submitted && <AnswerReveal q={q} t={t} openInWiki={openInWiki} />}
       {!submitted ? (
         <button
           onClick={submit}
@@ -879,7 +942,7 @@ function MatchYear({ q, t, onResult, onNext }) {
   );
 }
 
-function OrderItems({ q, t, onResult, onNext }) {
+function OrderItems({ q, t, onResult, onNext, openInWiki }) {
   const [order, setOrder] = useState(() => shuffle(q.items.map((_, i) => i)));
   const [submitted, setSubmitted] = useState(false);
 
@@ -931,10 +994,96 @@ function OrderItems({ q, t, onResult, onNext }) {
           Correct order: {q.correctOrder.map((idx) => q.items[idx]).join(' → ')}
         </div>
       )}
+      {submitted && <AnswerReveal q={q} t={t} openInWiki={openInWiki} />}
       {!submitted ? (
         <button onClick={submit} style={primaryBtn(t)}>Check order</button>
       ) : (
         <NextButton t={t} onClick={onNext} />
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// ANSWER REVEAL — unified post-submission panel across question types.
+// Shows date, explanation, amendment text (pulled from wiki for amendment
+// chapters), and an "Open in wiki" deep-link.
+// ============================================================
+
+function AnswerReveal({ q, t, openInWiki }) {
+  const entry = getWikiEntry(q.wikiRef);
+  const date = q.date || (entry ? String(entry.year) : null);
+  const showAmendmentText =
+    entry && q.wikiRef && AMENDMENT_CHAPTERS.has(q.wikiRef.chapter) && !q.suppressAmendmentText;
+
+  const hasContent = date || q.explanation || showAmendmentText || q.wikiRef;
+  if (!hasContent) return null;
+
+  return (
+    <div style={{
+      marginTop: 16,
+      padding: '14px 16px',
+      background: t.surface,
+      border: `1px solid ${t.border}`,
+    }}>
+      {date && (
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase',
+          color: t.muted,
+          marginBottom: (q.explanation || showAmendmentText || q.wikiRef) ? 10 : 0,
+        }}>
+          <Calendar size={11} />
+          {date}
+        </div>
+      )}
+      {q.explanation && (
+        <p style={{
+          margin: (showAmendmentText || q.wikiRef) ? '0 0 12px' : 0,
+          fontSize: 13,
+          color: t.muted,
+          fontStyle: 'italic',
+          lineHeight: 1.55,
+        }}>
+          {q.explanation}
+        </p>
+      )}
+      {showAmendmentText && (
+        <blockquote style={{
+          margin: q.wikiRef ? '0 0 12px' : 0,
+          padding: '8px 0 8px 12px',
+          borderLeft: `2px solid ${t.border}`,
+          fontSize: 13,
+          lineHeight: 1.65,
+          color: t.text,
+        }}>
+          <div style={{
+            fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase',
+            color: t.muted, marginBottom: 6,
+          }}>
+            {entry.title}
+          </div>
+          {entry.text}
+        </blockquote>
+      )}
+      {q.wikiRef && openInWiki && (
+        <button
+          onClick={() => openInWiki(q.wikiRef)}
+          style={{
+            background: 'transparent',
+            border: `1px solid ${t.border}`,
+            color: t.text,
+            padding: '6px 12px',
+            fontSize: 11,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+          }}
+        >
+          <ExternalLink size={11} />
+          Open in wiki
+        </button>
       )}
     </div>
   );
@@ -985,9 +1134,23 @@ function NextButton({ t, onClick }) {
 // WIKI VIEW
 // ============================================================
 
-function WikiView({ t }) {
+function WikiView({ t, deepLink }) {
   const [query, setQuery] = useState('');
   const [openChapter, setOpenChapter] = useState(null);
+
+  useEffect(() => {
+    if (!deepLink) return;
+    setOpenChapter(deepLink.chapter);
+    setQuery('');
+    const id = `wiki-${deepLink.chapter}-${deepLink.num}`;
+    // Wait for the expanded chapter to render entries, then scroll.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  }, [deepLink]);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return WIKI;
@@ -1059,7 +1222,15 @@ function WikiView({ t }) {
             {open && (
               <div style={{ paddingBottom: 12 }}>
                 {chapter.entries.map((e) => (
-                  <article key={e.num} style={{ padding: '16px 0', borderTop: `1px solid ${t.border}` }}>
+                  <article
+                    key={e.num}
+                    id={`wiki-${chapter.id}-${e.num}`}
+                    style={{
+                      padding: '16px 0',
+                      borderTop: `1px solid ${t.border}`,
+                      scrollMarginTop: 96,
+                    }}
+                  >
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 8 }}>
                       <span className="mono" style={{ fontSize: 11, color: t.muted, letterSpacing: '0.1em' }}>№ {e.num}</span>
                       <h3 style={{ fontSize: 16, fontWeight: 500, margin: 0 }}>{e.title}</h3>
