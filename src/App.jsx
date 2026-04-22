@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Sun, Moon, Search, ChevronRight, Check, X, RotateCcw,
   BookOpen, Home, Flame, Trophy, Eye, EyeOff, Brain, Clock, ArrowLeft,
-  Calendar, ExternalLink, Flag,
+  Calendar, ExternalLink,
 } from 'lucide-react';
 
 const THEME_IDS = ['dark', 'light', 'us'];
@@ -221,21 +221,22 @@ const THEMES = {
     heatScale: ['#1f1e1a', '#2d4a2d', '#487a44', '#68ab5a', '#9bd47b'],
     subtle: '#17171412',
   },
-  // Clean red-white-blue. Parchment cream for backgrounds, deep navy for
-  // text/accent, Old Glory Red reserved for "wrong" highlights. Heatmap
-  // gradient runs cream → navy so activity reads as patriotic blue.
+  // Full red-white-blue. Warm near-white backgrounds let the flag colors
+  // pop: vibrant Old Glory Blue for text, Old Glory Red as the accent on
+  // active tab underlines, and a heatmap that runs cream → blue → navy
+  // → red so high-activity days light up in the flag's peak color.
   us: {
-    bg: '#f6f1e4',
-    surface: '#fdf9ec',
-    text: '#0d1b3d',
-    muted: '#5a6486',
-    border: '#d5c9ae',
-    accent: '#0d1b3d',
-    correct: '#2e6749',
-    wrong: '#b22234',
-    heatEmpty: '#e7ddc4',
-    heatScale: ['#e7ddc4', '#c9d3e3', '#8da4c9', '#4b6aa1', '#0d1b3d'],
-    subtle: '#efe7d1',
+    bg: '#fefcf5',
+    surface: '#ffffff',
+    text: '#002868',
+    muted: '#5a73a6',
+    border: '#dce3ec',
+    accent: '#bf0a30',
+    correct: '#2e7d47',
+    wrong: '#bf0a30',
+    heatEmpty: '#f0e8d4',
+    heatScale: ['#f0e8d4', '#c8d6ea', '#6a8bc7', '#1f3a8f', '#bf0a30'],
+    subtle: '#f7f1dc',
   },
 };
 
@@ -441,10 +442,7 @@ function Header({ theme, t, toggleTheme, tab, setTab }) {
     }}>
       <div style={{ maxWidth: 780, margin: '0 auto', padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-          <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: '-0.01em' }}>
-            {theme === 'us' && <span style={{ marginRight: 8 }}>🇺🇸</span>}
-            Americana
-          </span>
+          <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: '-0.01em' }}>Americana</span>
           <span className="mono" style={{ fontSize: 10, color: t.muted, letterSpacing: '0.15em', textTransform: 'uppercase' }}>trivia</span>
         </div>
         <button
@@ -463,7 +461,7 @@ function Header({ theme, t, toggleTheme, tab, setTab }) {
         >
           {theme === 'dark' && <Moon size={15} />}
           {theme === 'light' && <Sun size={15} />}
-          {theme === 'us' && <Flag size={15} />}
+          {theme === 'us' && <span style={{ fontSize: 15, lineHeight: 1 }}>🇺🇸</span>}
         </button>
       </div>
       <nav style={{ maxWidth: 780, margin: '0 auto', padding: '0 20px', display: 'flex', gap: 0, overflowX: 'auto' }}>
