@@ -5,7 +5,9 @@ import {
   Calendar, ExternalLink,
 } from 'lucide-react';
 
-const THEME_IDS = ['dark', 'light', 'us'];
+// Light theme is currently hidden — button cycles dark ↔ us.
+// Users with 'light' in localStorage are migrated to 'dark' on load.
+const THEME_IDS = ['dark', 'us'];
 import { WIKI } from './data/wiki.js';
 import { QUESTIONS } from './data/questions.js';
 import { SPEECHES } from './data/speeches.js';
@@ -195,19 +197,22 @@ function firstLetterCue(text) {
 // ============================================================
 
 const THEMES = {
-  light: {
-    bg: '#fafaf7',
-    surface: '#ffffff',
-    text: '#111111',
-    muted: '#6b6b6b',
-    border: '#e5e3dc',
-    accent: '#1a1a1a',
-    correct: '#2d6a4f',
-    wrong: '#b5341a',
-    heatEmpty: '#eeece4',
-    heatScale: ['#eeece4', '#d4e7c5', '#95c17b', '#4d8c3a', '#1f5c1f'],
-    subtle: '#f5f3ed',
-  },
+  // Light theme hidden — not in THEME_IDS so the toggle skips it and the
+  // loader migrates stored 'light' values to 'dark'. Kept (commented) so
+  // it's easy to restore.
+  // light: {
+  //   bg: '#fafaf7',
+  //   surface: '#ffffff',
+  //   text: '#111111',
+  //   muted: '#6b6b6b',
+  //   border: '#e5e3dc',
+  //   accent: '#1a1a1a',
+  //   correct: '#2d6a4f',
+  //   wrong: '#b5341a',
+  //   heatEmpty: '#eeece4',
+  //   heatScale: ['#eeece4', '#d4e7c5', '#95c17b', '#4d8c3a', '#1f5c1f'],
+  //   subtle: '#f5f3ed',
+  // },
   dark: {
     bg: '#0e0e0c',
     surface: '#1a1a17',
