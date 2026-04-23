@@ -380,7 +380,14 @@ export default function App() {
 
       <main style={{ maxWidth: 780, margin: '0 auto', padding: '32px 20px 80px' }}>
         {tab === 'home' && (
-          <HomeView t={t} sessions={sessions} setTab={setTab} />
+          <HomeView
+            t={t}
+            sessions={sessions}
+            streak={streak}
+            totals={totals}
+            setTab={setTab}
+            resetAll={resetAll}
+          />
         )}
         {/* PlayView stays mounted (just hidden) so per-question state —
             selected option, typed blanks, shown hint, submission result —
@@ -411,9 +418,6 @@ export default function App() {
             onBackToPlay={() => setTab('play')}
           />
         )}
-        {tab === 'stats' && (
-          <StatsView t={t} sessions={sessions} streak={streak} totals={totals} resetAll={resetAll} />
-        )}
       </main>
     </div>
   );
@@ -429,7 +433,6 @@ function Header({ theme, t, toggleTheme, tab, setTab }) {
     { id: 'play', label: 'Play' },
     { id: 'memorize', label: 'Memorize' },
     { id: 'wiki', label: 'Wiki' },
-    { id: 'stats', label: 'Stats' },
   ];
   return (
     <header style={{
@@ -497,7 +500,10 @@ function Header({ theme, t, toggleTheme, tab, setTab }) {
 // HOME VIEW
 // ============================================================
 
-function HomeView({ t, sessions, setTab }) {
+function HomeView({ t, sessions, streak, totals, setTab, resetAll }) {
+  const accuracy = totals.played ? Math.round((totals.correct / totals.played) * 100) : 0;
+  const activeDays = Object.keys(sessions).length;
+
   return (
     <div className="fade-in">
       <h1 style={{ fontSize: 40, fontWeight: 400, lineHeight: 1.1, margin: '24px 0 8px', letterSpacing: '-0.02em' }}>
@@ -507,9 +513,7 @@ function HomeView({ t, sessions, setTab }) {
         Study, recall, and test yourself across the Constitution, presidents, speeches, and more. Mixed question types, daily streaks, full reference, and a Memorize mode for committing passages to memory.
       </p>
 
-      <Heatmap t={t} sessions={sessions} />
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 32 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         <button
           onClick={() => setTab('play')}
           style={{
@@ -520,7 +524,7 @@ function HomeView({ t, sessions, setTab }) {
             transition: 'all 150ms ease',
           }}
         >
-          Begin a session →
+          Play
         </button>
         <button
           onClick={() => setTab('memorize')}
@@ -535,6 +539,37 @@ function HomeView({ t, sessions, setTab }) {
           Memorize passages
         </button>
       </div>
+
+      <section style={{ marginTop: 48, paddingTop: 32, borderTop: `1px solid ${t.border}` }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 32 }}>
+          <StatCard t={t} label="Answered" value={totals.played} />
+          <StatCard t={t} label="Correct" value={totals.correct} />
+          <StatCard t={t} label="Accuracy" value={`${accuracy}%`} />
+          <StatCard t={t} label="Active days" value={activeDays} />
+          <StatCard t={t} label="Current streak" value={streak.current} suffix={streak.current === 1 ? 'day' : 'days'} icon={<Flame size={14} />} />
+          <StatCard t={t} label="Longest streak" value={streak.longest} suffix={streak.longest === 1 ? 'day' : 'days'} icon={<Trophy size={14} />} />
+        </div>
+
+        <Heatmap t={t} sessions={sessions} />
+
+        <button
+          onClick={resetAll}
+          style={{
+            marginTop: 48,
+            background: 'transparent',
+            color: t.muted,
+            border: `1px solid ${t.border}`,
+            padding: '10px 16px',
+            fontSize: 12,
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+            cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+          }}
+        >
+          <RotateCcw size={12} /> Reset all progress
+        </button>
+      </section>
     </div>
   );
 }
@@ -1763,46 +1798,3 @@ function TopBar({ t, onBack, title }) {
   );
 }
 
-// ============================================================
-// STATS VIEW
-// ============================================================
-
-function StatsView({ t, sessions, streak, totals, resetAll }) {
-  const accuracy = totals.played ? Math.round((totals.correct / totals.played) * 100) : 0;
-  const activeDays = Object.keys(sessions).length;
-
-  return (
-    <div className="fade-in">
-      <h1 style={{ fontSize: 32, fontWeight: 400, margin: '24px 0 24px', letterSpacing: '-0.02em' }}>Stats</h1>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 32 }}>
-        <StatCard t={t} label="Answered" value={totals.played} />
-        <StatCard t={t} label="Correct" value={totals.correct} />
-        <StatCard t={t} label="Accuracy" value={`${accuracy}%`} />
-        <StatCard t={t} label="Active days" value={activeDays} />
-        <StatCard t={t} label="Current streak" value={streak.current} suffix={streak.current === 1 ? 'day' : 'days'} icon={<Flame size={14} />} />
-        <StatCard t={t} label="Longest streak" value={streak.longest} suffix={streak.longest === 1 ? 'day' : 'days'} icon={<Trophy size={14} />} />
-      </div>
-
-      <Heatmap t={t} sessions={sessions} />
-
-      <button
-        onClick={resetAll}
-        style={{
-          marginTop: 48,
-          background: 'transparent',
-          color: t.muted,
-          border: `1px solid ${t.border}`,
-          padding: '10px 16px',
-          fontSize: 12,
-          letterSpacing: '0.05em',
-          textTransform: 'uppercase',
-          cursor: 'pointer',
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-        }}
-      >
-        <RotateCcw size={12} /> Reset all progress
-      </button>
-    </div>
-  );
-}
